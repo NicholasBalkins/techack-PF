@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Phishing Detector - Proteção Online</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-shield-alt"></i>
+                <span>Phishing Detector</span>
+            </div>
+            <nav class="nav">
+                <a href="#home">Home</a>
+                <a href="/history">Histórico</a>
+                <a href="#about">Sobre</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-section" id="home">
+        <div class="hero-content">
+            <h1><i class="fas fa-lock"></i> Proteja-se contra Phishing</h1>
+            <p class="hero-subtitle">Detecte URLs maliciosas antes de clicar. Análise completa em segundos.</p>
+            
+            <div class="search-card">
+                <form method="post" class="search-form">
+                    <div class="input-group">
+                        <i class="fas fa-link"></i>
+                        <input type="url" name="url" placeholder="Cole a URL suspeita aqui..." required>
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-search"></i> Analisar URL
+                    </button>
+                </form>
+            </div>
+
+            <!-- Features -->
+            <div class="features">
+                <div class="feature-item">
+                    <i class="fas fa-bolt"></i>
+                    <span>Análise Rápida</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-database"></i>
+                    <span>Base Atualizada</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>100% Seguro</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Results Section -->
+    {% if results %}
+    <section class="results-section">
+        <div class="container">
+            <div class="section-header">
+                <h2><i class="fas fa-chart-line"></i> Resultados da Análise</h2>
+                <p>Veja os detalhes da verificação abaixo</p>
+            </div>
+
+            <!-- Status Cards -->
+            <div class="status-cards">
+                <div class="status-card {{ 'safe' if results.url_analysis['status'] == 'OK' else 'danger' }}">
+                    <div class="card-icon">
+                        <i class="fas fa-link"></i>
+                    </div>
+                    <h3>Análise de URL</h3>
+                    <p class="status-badge">
+                        {{ '✓ Seguro' if results.url_analysis['status'] == 'OK' else '✗ Suspeito' }}
+                    </p>
+                    <p class="details">{{ results.url_analysis['details'] }}</p>
+                </div>
+
+                <div class="status-card {{ 'safe' if results.webpage_analysis['status'] == 'OK' else 'danger' }}">
+                    <div class="card-icon">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <h3>Análise de Página</h3>
+                    <p class="status-badge">
+                        {{ '✓ Seguro' if results.webpage_analysis['status'] == 'OK' else '✗ Suspeito' }}
+                    </p>
+                    <p class="details">{{ results.webpage_analysis['details'] }}</p>
+                </div>
+
+                <div class="status-card {{ 'safe' if results.db_comparison['status'] == 'OK' else 'danger' }}">
+                    <div class="card-icon">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <h3>Base de Dados</h3>
+                    <p class="status-badge">
+                        {{ '✓ Seguro' if results.db_comparison['status'] == 'OK' else '✗ Suspeito' }}
+                    </p>
+                    <p class="details">{{ results.db_comparison['details'] }}</p>
+                </div>
+
+                <div class="status-card {{ 'safe' if results.technical_analysis['status'] == 'OK' else 'danger' }}">
+                    <div class="card-icon">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <h3>Análise Técnica</h3>
+                    <p class="status-badge">
+                        {{ '✓ Seguro' if results.technical_analysis['status'] == 'OK' else '✗ Suspeito' }}
+                    </p>
+                    <p class="details">{{ results.technical_analysis['details'] }}</p>
+                </div>
+
+                <div class="status-card {{ 'safe' if results.content_analysis['status'] == 'OK' else 'danger' }}">
+                    <div class="card-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <h3>Análise de Conteúdo</h3>
+                    <p class="status-badge">
+                        {{ '✓ Seguro' if results.content_analysis['status'] == 'OK' else '✗ Suspeito' }}
+                    </p>
+                    <p class="details">{{ results.content_analysis['details'] }}</p>
+                </div>
+            </div>
+
+            <!-- Final Verdict -->
+            <div class="final-verdict {{ 'verdict-safe' if all_ok else 'verdict-danger' }}">
+                <div class="verdict-icon">
+                    <i class="fas {{ 'fa-check-circle' if all_ok else 'fa-exclamation-triangle' }}"></i>
+                </div>
+                <div class="verdict-text">
+                    {% if all_ok %}
+                        <h3>URL Segura</h3>
+                        <p>Nenhuma ameaça detectada. Esta URL parece segura para acesso.</p>
+                    {% else %}
+                        <h3>URL Suspeita</h3>
+                        <p>Atenção! Esta URL apresenta características suspeitas. Evite acessá-la.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+                        <!-- Stats / Chart -->
+                        <div style="max-width:900px; margin:40px auto;">
+                                <canvas id="statsChart"></canvas>
+                        </div>
+
+                        <!-- Explanations -->
+                        <section style="max-width:900px; margin:20px auto;">
+                                <h3>O que analisamos</h3>
+                                <ul>
+                                        <li><strong>Análise de URL:</strong> heurísticas sobre domínio, subdomínios, caracteres especiais e uso de IP.</li>
+                                        <li><strong>Análise de Página:</strong> procura por formulários, iframes ocultos, redirecionamentos e links externos.</li>
+                                        <li><strong>Base de Dados:</strong> checagem em lista local de phishing e similaridade com marcas conhecidas.</li>
+                                        <li><strong>Análise Técnica:</strong> WHOIS (idade do domínio), uso de DNS dinâmico e validade do certificado SSL.</li>
+                                        <li><strong>Conteúdo:</strong> detecção de solicitações de dados sensíveis e logos clonados.</li>
+                                </ul>
+                        </section>
+        </div>
+    </section>
+    {% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+if (document.getElementById('statsChart')){
+    fetch('/stats').then(r=>r.json()).then(data=>{
+        const ctx = document.getElementById('statsChart').getContext('2d');
+        new Chart(ctx, {
+            type:'bar',
+            data:{
+                labels:['URL','Página','DB','Técnica','Conteúdo'],
+                datasets:[{label:'Casos FAIL', data:[data.url_fail,data.webpage_fail,data.db_fail,data.technical_fail,data.content_fail], backgroundColor:['#ef4444','#f97316','#fb923c','#f59e0b','#ef4444']}]
+            },
+            options:{responsive:true, maintainAspectRatio:false}
+        });
+    }).catch(()=>{});
+}
+</script>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Phishing Detector | Desenvolvido no Insper</p>
+            <div class="social-links">
+                <a href="#"><i class="fab fa-github"></i></a>
+                <a href="#"><i class="fab fa-linkedin"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
