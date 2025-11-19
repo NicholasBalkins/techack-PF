@@ -19,6 +19,53 @@ class DbComparator:
                             self.local_db.add(row[0].strip().lower())
             except Exception:
                 self.local_db = set()
+        
+        # Cache do OpenPhish (evita múltiplas requisições)
+        self.openphish_cache = None
+        self.openphish_cache_time = 0
+    
+    def _check_openphish(self, url):
+        """
+        Consulta o feed público do OpenPhish para verificar se a URL está reportada.
+        OpenPhish Feed: https://openphish.com/feed.txt (atualizado a cada hora)
+        """
+        import time
+        
+        try:
+            # Cache por 1 hora (3600 segundos)
+            current_time = time.time()
+            if self.openphish_cache is None or (current_time - self.openphish_cache_time) > 3600:
+                # Baixa o feed do OpenPhish
+                response = requests.get('https://openphish.com/feed.txt', timeout=5)
+                if response.status_code == 200:
+                    # Converte para conjunto de URLs normalizadas
+                    urls = [line.strip().lower() for line in response.text.strip().split('\n') if line.strip()]
+                    self.openphish_cache = set(urls)
+                    self.openphish_cache_time = current_time
+                else:
+                    return False, None
+            
+            # Verifica se a URL está no feed
+            url_normalized = url.lower().strip()
+            
+            # Verifica URL exata
+            if url_normalized in self.openphish_cache:
+                return True, 'OpenPhish'
+            
+            # Verifica URL sem protocolo (http:// ou https://)
+            parsed = urlparse(url_normalized)
+            url_without_protocol = parsed.netloc + parsed.path
+            if parsed.path:
+                url_without_protocol = url_without_protocol.rstrip('/')
+            
+            for cached_url in self.openphish_cache:
+                if url_without_protocol in cached_url or cached_url in url_without_protocol:
+                    return True, 'OpenPhish'
+            
+            return False, None
+            
+        except Exception:
+            return False, None
     
     def _check_phishtank(self, url):
         """
@@ -104,14 +151,19 @@ class DbComparator:
         if domain in self.local_db:
             return {'status': 'FAIL', 'details': '⚠️ Domínio presente na base local de phishing'}
 
-        # 2. Consulta PhishTank API em tempo real
-        is_phishing, source = self._check_phishtank(url)
-        if is_phishing:
-            return {'status': 'FAIL', 'details': f'⚠️ PHISHING CONFIRMADO: URL reportada no PhishTank'}
+        # 2. Consulta OpenPhish (feed público, sem API key necessária)
+        is_phishing_op, source_op = self._check_openphish(url)
+        if is_phishing_op:
+            return {'status': 'FAIL', 'details': '⚠️ PHISHING CONFIRMADO: URL reportada no OpenPhish'}
 
-        # 3. Verifica similaridade com marcas conhecidas (Levenshtein)
+        # 3. Consulta PhishTank API em tempo real (requer API key para funcionar sem bloqueios)
+        is_phishing_pt, source_pt = self._check_phishtank(url)
+        if is_phishing_pt:
+            return {'status': 'FAIL', 'details': '⚠️ PHISHING CONFIRMADO: URL reportada no PhishTank'}
+
+        # 4. Verifica similaridade com marcas conhecidas (Levenshtein)
         similar, brand = self._is_similar_to_brand(domain)
         if similar:
             return {'status': 'FAIL', 'details': f'⚠️ Domínio similar a marca conhecida ({brand}) - possível typosquatting'}
 
-        return {'status': 'OK', 'details': '✓ Verificado: PhishTank consultado + Base local + Typosquatting'}
+        return {'status': 'OK', 'details': '✓ Verificado: OpenPhish + PhishTank + Base local + Typosquatting'}

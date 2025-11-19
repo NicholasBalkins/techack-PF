@@ -38,7 +38,8 @@ Abra seu navegador e acesse: http://127.0.0.1:5000
 ## Funcionalidades
 
 ### Detecção de Phishing
-- Consulta em tempo real à API do PhishTank
+- Consulta ao feed público do OpenPhish (sem necessidade de API key, ~300 URLs atualizadas por hora)
+- Consulta em tempo real à API do PhishTank (opcional, requer API key)
 - Base de dados local configurável (arquivo CSV)
 - Análise de URL: detecção de TLDs suspeitos, subdomínios com padrões aleatórios, uso de endereços IP
 - Verificação de conteúdo HTML: formulários suspeitos, campos de senha, iframes ocultos
